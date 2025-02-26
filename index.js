@@ -1,50 +1,57 @@
-var video = document.getElementById("webcam");
-var captureButton = document.getElementById('snapPicture');
-var downloadButton = document.getElementById('download');
-
-const imageContainer = document.querySelector(".image-container");
+const video = document.getElementById("webcam");
+const captureButton = document.getElementById('snapPicture');
+const downloadButton = document.getElementById('download');
+const colorPicker = document.getElementById("bgColor");
+const canvases = document.querySelectorAll('.captured');
 
 let timerInterval;
-
+let captureIndex = 0;
 
 navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false })
-.then((stream) => {
-  video.srcObject = stream;
-  video.play();
-})
-.catch((err) => {
-  console.error(`The following error occurred: ${err.name}`);
-});
+    .then((stream) => {
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch((err) => {
+        console.error(`The following error occurred: ${err.name}`);
+    });
 
-function capturedPic() {
-  var flag = 0;
-
-  timerInterval = setInterval(function(){
-    renderCanvas();
-    flag++;
-
-    if(flag === 3){
-      clearInterval(timerInterval);
-      console.log('stopped')
-    }
-  }, 2000)
+function captureImages() {
+    captureIndex = 0;
+    timerInterval = setInterval(() => {
+        if (captureIndex < 3) {
+            renderCanvas(canvases[captureIndex]);
+            captureIndex++;
+        } else {
+            clearInterval(timerInterval);
+            console.log('Capture completed.');
+        }
+    }, 2000);
 }
 
-function renderCanvas(){
-  const canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 150;
-  canvas.classList.add("captured")
-  var context = canvas.getContext("2d");
-  console.log(context)
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  imageContainer.appendChild(canvas)
+function renderCanvas(canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 }
 
-function downloadImage(){
-  
+function downloadImage() {
+    const finalCanvas = document.createElement("canvas");
+    finalCanvas.width = 600; 
+    finalCanvas.height = 200; 
+    const ctx = finalCanvas.getContext("2d");
 
+    const bgColor = colorPicker.value;
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+    canvases.forEach((canvas, index) => {
+        ctx.drawImage(canvas, index * 200, 25, 200, 150); 
+    });
+
+    const image = finalCanvas.toDataURL("image/png");
+    downloadButton.href = image;
 }
 
-downloadButton.addEventListener('click',downloadImage);
-captureButton.addEventListener('click', capturedPic);
+
+captureButton.addEventListener('click', captureImages);
+downloadButton.addEventListener('click', downloadImage);
